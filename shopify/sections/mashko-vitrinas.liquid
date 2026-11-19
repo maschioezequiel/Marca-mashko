@@ -1,0 +1,442 @@
+{%- comment -%}
+  MASHKO · Vitrinas iluminadas
+  Muestra los productos de una colección en una pared de vitrinas que se encienden
+  al pasar el cursor. Al hacer clic se abre una ficha con talle/color y se agrega al
+  carrito real de Shopify (/cart/add.js).
+{%- endcomment -%}
+
+{%- assign col = section.settings.coleccion -%}
+{%- assign limite = section.settings.cantidad -%}
+
+<div class="mv mv-{{ section.id }}" data-mv>
+  <div class="mv-intro">
+    <h2 class="mv-titulo">{{ section.settings.titulo | escape }}<span>.</span></h2>
+    {%- if section.settings.subtitulo != blank -%}
+      <p class="mv-sub">{{ section.settings.subtitulo | escape }}</p>
+    {%- endif -%}
+  </div>
+
+  <div class="mv-pared" style="--cols: {{ section.settings.columnas }}">
+    {%- if col != blank and col.products_count > 0 -%}
+      {%- for product in col.products limit: limite -%}
+        <button type="button" class="mv-nicho" data-index="{{ forloop.index0 }}"
+          aria-label="{{ product.title | escape }}, {{ product.price | money | strip_html }}">
+          <span class="mv-lampara"></span>
+          <span class="mv-cono"></span>
+          <span class="mv-prenda">
+            {%- if product.featured_image -%}
+              {{ product.featured_image | image_url: width: 700 | image_tag: loading: 'lazy', alt: product.title, sizes: '(max-width: 900px) 50vw, 25vw' }}
+            {%- endif -%}
+          </span>
+          <span class="mv-etiqueta">
+            <strong>{{ product.title | remove: 'Remera ' | remove: 'Oversize ' | escape }}</strong>
+            <small>{{ product.price | money }}</small>
+          </span>
+        </button>
+      {%- endfor -%}
+    {%- else -%}
+      {%- for i in (1..4) -%}
+        <div class="mv-nicho mv-vacio"><span class="mv-lampara"></span><span class="mv-cono"></span>
+          <span class="mv-etiqueta"><strong>Elegí una colección</strong></span></div>
+      {%- endfor -%}
+    {%- endif -%}
+  </div>
+
+  {%- if col != blank -%}
+  <script type="application/json" data-mv-datos>
+    [
+    {%- for product in col.products limit: limite -%}
+      {
+        "titulo": {{ product.title | json }},
+        "url": {{ product.url | json }},
+        "tipo": {{ product.type | json }},
+        "descripcion": {{ product.description | strip_html | truncatewords: 60 | json }},
+        "imagen": {{ product.featured_image | image_url: width: 1200 | json }},
+        "vistas": [
+          {%- for img in product.images -%}
+            {"src": {{ img | image_url: width: 1400 | json }}, "zoom": {{ img | image_url: width: 2600 | json }}, "alt": {{ img.alt | default: product.title | json }}}{% unless forloop.last %},{% endunless %}
+          {%- endfor -%}
+        ],
+        "opciones": {{ product.options | json }},
+        "variantes": [
+          {%- for v in product.variants -%}
+            {
+              "id": {{ v.id }},
+              "disponible": {{ v.available | json }},
+              "opciones": {{ v.options | json }},
+              "precio": {{ v.price | money | strip_html | json }},
+              "imagen": {% if v.featured_image %}{{ v.featured_image | image_url: width: 1200 | json }}{% else %}null{% endif %}
+            }{% unless forloop.last %},{% endunless %}
+          {%- endfor -%}
+        ]
+      }{% unless forloop.last %},{% endunless %}
+    {%- endfor -%}
+    ]
+  </script>
+  {%- endif -%}
+
+  <div class="mv-ficha" role="dialog" aria-modal="true" aria-label="Producto" hidden>
+    <div class="mv-caja">
+      <button type="button" class="mv-cerrar" aria-label="Cerrar">×</button>
+      <div class="mv-vitrina">
+        <span class="mv-cono"></span><span class="mv-lampara"></span>
+        <div class="mv-visor" aria-label="Tocá para hacer zoom">
+          <img class="mv-foto" alt="" draggable="false">
+        </div>
+        <p class="mv-pista"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5M11 8v6M8 11h6"/></svg><span>Tocá la remera para hacer zoom</span></p>
+        <div class="mv-vistas" role="group" aria-label="Vistas de la remera"></div>
+      </div>
+      <div class="mv-info">
+        <p class="mv-linea"></p>
+        <h3 class="mv-nombre"></h3>
+        <p class="mv-precio"></p>
+        <p class="mv-desc"></p>
+        <div class="mv-opciones"></div>
+        <button type="button" class="mv-comprar" disabled>Elegí un talle</button>
+        <a class="mv-ver" href="#">Ver ficha completa →</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="mv-aviso" aria-live="polite"></div>
+</div>
+
+<style>
+  .mv-{{ section.id }}{
+    --luz:255,214,160; --marca:{{ section.settings.color_marca }}; --texto:#f3efe9; --gris:#9a948c;
+    background:#0d0d0d;color:var(--texto);padding:clamp(28px,5vw,72px) clamp(14px,4vw,48px);
+    font-family:inherit;
+  }
+  .mv-{{ section.id }} *{box-sizing:border-box}
+  .mv-{{ section.id }} .mv-intro{max-width:1400px;margin:0 auto clamp(20px,3vw,36px);display:flex;justify-content:space-between;align-items:flex-end;gap:24px}
+  .mv-{{ section.id }} .mv-titulo{margin:0;font-size:clamp(36px,6vw,80px);line-height:.95;letter-spacing:-2px;font-weight:700;color:var(--texto)}
+  .mv-{{ section.id }} .mv-titulo span{color:var(--marca)}
+  .mv-{{ section.id }} .mv-sub{margin:0;max-width:320px;color:var(--gris);font-size:15px;line-height:1.5;text-align:right}
+
+  .mv-{{ section.id }} .mv-pared{max-width:1400px;margin:0 auto;display:grid;grid-template-columns:repeat(var(--cols),1fr);
+    gap:clamp(10px,1.6vw,22px);padding:clamp(10px,1.6vw,22px);background:linear-gradient(180deg,#1b1916,#121110);
+    border:1px solid #24211e;border-radius:4px;box-shadow:inset 0 0 60px rgba(0,0,0,.7),0 40px 80px rgba(0,0,0,.5)}
+  .mv-{{ section.id }} .mv-nicho{position:relative;display:block;width:100%;aspect-ratio:4/5;border:0;padding:0;background:#0a0a0a;
+    overflow:hidden;border-radius:2px;cursor:pointer;color:inherit;font:inherit;
+    box-shadow:inset 0 0 0 1px #2a2724,inset 0 18px 30px rgba(0,0,0,.9),inset 0 -10px 24px rgba(0,0,0,.8)}
+  .mv-{{ section.id }} .mv-lampara{position:absolute;top:0;left:50%;width:34%;height:7px;transform:translateX(-50%);
+    border-radius:0 0 6px 6px;background:#2b2824;transition:background .5s,box-shadow .5s;z-index:3}
+  .mv-{{ section.id }} .mv-cono{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .6s;z-index:2;mix-blend-mode:screen;
+    background:radial-gradient(ellipse 55% 85% at 50% -8%,rgba(var(--luz),.5),rgba(var(--luz),.1) 55%,transparent 75%),
+               radial-gradient(ellipse 45% 10% at 50% 93%,rgba(var(--luz),.2),transparent 70%)}
+  .mv-{{ section.id }} .mv-prenda{position:absolute;inset:0;z-index:1;transition:filter .6s,transform .6s;filter:brightness(.12) saturate(.4)}
+  .mv-{{ section.id }} .mv-prenda img{width:100%;height:100%;object-fit:cover;object-position:50% 40%;display:block;
+    -webkit-mask-image:radial-gradient(ellipse 62% 58% at 50% 44%,#000 50%,transparent 100%);mask-image:radial-gradient(ellipse 62% 58% at 50% 44%,#000 50%,transparent 100%)}
+  .mv-{{ section.id }} .mv-etiqueta{position:absolute;left:0;right:0;bottom:4%;z-index:3;text-align:center;opacity:0;transform:translateY(6px);transition:opacity .35s,transform .35s}
+  .mv-{{ section.id }} .mv-etiqueta{text-shadow:0 1px 8px rgba(0,0,0,.9),0 0 2px rgba(0,0,0,.8)}
+  .mv-{{ section.id }} .mv-etiqueta strong{display:block;font-size:clamp(12px,1.25vw,16px);letter-spacing:.5px;font-weight:600}
+  .mv-{{ section.id }} .mv-etiqueta small{display:block;margin-top:3px;font-size:clamp(11px,1vw,13px);color:rgba(var(--luz),.9)}
+  .mv-{{ section.id }} .mv-nicho.on .mv-lampara{background:#ffe9c7;box-shadow:0 0 18px 4px rgba(var(--luz),.55)}
+  .mv-{{ section.id }} .mv-nicho.on .mv-cono{opacity:.45}
+  .mv-{{ section.id }} .mv-nicho.on .mv-prenda{filter:sepia(.35) brightness(.5) saturate(.8)}
+  .mv-{{ section.id }} .mv-nicho.on:hover .mv-cono,.mv-{{ section.id }} .mv-nicho.on:focus-visible .mv-cono{opacity:1}
+  .mv-{{ section.id }} .mv-nicho.on:hover .mv-prenda,.mv-{{ section.id }} .mv-nicho.on:focus-visible .mv-prenda{filter:sepia(.22) brightness(.97);transform:scale(1.03)}
+  .mv-{{ section.id }} .mv-nicho.on:hover .mv-etiqueta,.mv-{{ section.id }} .mv-nicho.on:focus-visible .mv-etiqueta{opacity:1;transform:none}
+  .mv-{{ section.id }} .mv-nicho:focus-visible{outline:2px solid var(--marca);outline-offset:-2px}
+  .mv-{{ section.id }} .mv-vacio{cursor:default}
+  .mv-{{ section.id }} .mv-vacio .mv-etiqueta{opacity:.7;transform:none;bottom:45%}
+
+  .mv-{{ section.id }} .mv-ficha{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:clamp(0px,3vw,40px);
+    background:rgba(5,5,5,.82);backdrop-filter:blur(6px)}
+  .mv-{{ section.id }} .mv-ficha[hidden]{display:none}
+  .mv-{{ section.id }} .mv-caja{position:relative;display:grid;grid-template-columns:1.15fr 1fr;width:min(1120px,100%);max-height:100%;overflow:auto;
+    background:#121110;border:1px solid #26231f;border-radius:4px;animation:mvEntra .35s ease}
+  @keyframes mvEntra{from{opacity:0;transform:translateY(16px) scale(.98)}}
+  .mv-{{ section.id }} .mv-cerrar{position:absolute;top:12px;right:12px;z-index:5;width:40px;height:40px;border-radius:50%;
+    border:1px solid #3a3632;background:#151413;color:var(--texto);font-size:20px;line-height:1;cursor:pointer}
+  .mv-{{ section.id }} .mv-vitrina{position:relative;min-height:520px;background:#0a0a0a;overflow:hidden;box-shadow:inset 0 30px 50px rgba(0,0,0,.9)}
+  .mv-{{ section.id }} .mv-vitrina .mv-cono{opacity:1}
+  .mv-{{ section.id }} .mv-vitrina .mv-lampara{width:30%;height:9px;background:#ffe9c7;box-shadow:0 0 26px 6px rgba(var(--luz),.6)}
+  .mv-{{ section.id }} .mv-visor{position:absolute;inset:0;z-index:1;overflow:hidden;perspective:1400px;cursor:zoom-in;touch-action:pan-y;-webkit-user-select:none;user-select:none}
+  .mv-{{ section.id }} .mv-foto{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;filter:sepia(.2) brightness(.97);
+    transition:transform .35s ease,filter .35s;transform-origin:50% 50%;will-change:transform;
+    -webkit-mask-image:radial-gradient(ellipse 58% 60% at 50% 48%,#000 55%,transparent 100%);mask-image:radial-gradient(ellipse 58% 60% at 50% 48%,#000 55%,transparent 100%)}
+  .mv-{{ section.id }} .mv-vitrina.zoom .mv-visor{cursor:zoom-out;touch-action:none;background:#f4f3f1}
+  .mv-{{ section.id }} .mv-vitrina.zoom .mv-foto{transform:scale(2.4);filter:none;transition:transform .35s ease,filter .35s,transform-origin .08s linear;
+    -webkit-mask-image:none;mask-image:none}
+  .mv-{{ section.id }} .mv-vitrina.zoom .mv-cono,.mv-{{ section.id }} .mv-vitrina.zoom .mv-lampara,.mv-{{ section.id }} .mv-vitrina.zoom .mv-pista{opacity:0}
+  .mv-{{ section.id }} .mv-pista{position:absolute;top:22px;left:18px;z-index:3;margin:0;display:flex;align-items:center;gap:6px;font-size:12px;
+    color:rgba(243,239,233,.75);pointer-events:none;transition:opacity .3s}
+  .mv-{{ section.id }} .mv-pista svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+  .mv-{{ section.id }} .mv-vistas{position:absolute;left:50%;bottom:18px;z-index:3;transform:translateX(-50%);display:flex;gap:4px;padding:4px;
+    background:rgba(10,10,10,.72);border:1px solid #3a3632;border-radius:999px;backdrop-filter:blur(6px)}
+  .mv-{{ section.id }} .mv-vistas:empty{display:none}
+  .mv-{{ section.id }} .mv-vista{border:0;background:transparent;color:var(--texto);font:inherit;font-size:13px;font-weight:600;letter-spacing:.5px;
+    padding:8px 16px;border-radius:999px;cursor:pointer;transition:background .2s,color .2s}
+  .mv-{{ section.id }} .mv-vista.sel{background:var(--texto);color:#111}
+  .mv-{{ section.id }} .mv-vista:focus-visible{outline:2px solid var(--marca);outline-offset:2px}
+  .mv-{{ section.id }} .mv-info{padding:clamp(24px,4vw,48px);display:flex;flex-direction:column;gap:18px}
+  .mv-{{ section.id }} .mv-linea{margin:0;font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:var(--marca);font-weight:700}
+  .mv-{{ section.id }} .mv-nombre{margin:-8px 0 0;font-size:clamp(28px,3.2vw,42px);line-height:1.05;letter-spacing:-1px;color:var(--texto)}
+  .mv-{{ section.id }} .mv-precio{margin:0;font-size:22px;font-weight:600}
+  .mv-{{ section.id }} .mv-desc{margin:0;color:#bdb6ad;font-size:15px;line-height:1.6}
+  .mv-{{ section.id }} .mv-opciones{display:flex;flex-direction:column;gap:18px}
+  .mv-{{ section.id }} .mv-rotulo{margin:0 0 8px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gris)}
+  .mv-{{ section.id }} .mv-rotulo b{color:var(--texto);letter-spacing:0;text-transform:none;font-weight:500}
+  .mv-{{ section.id }} .mv-valores{display:flex;flex-wrap:wrap;gap:8px}
+  .mv-{{ section.id }} .mv-valor{min-width:56px;height:44px;padding:0 14px;border:1px solid #3a3632;background:transparent;color:var(--texto);
+    border-radius:2px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;transition:background .2s,border-color .2s}
+  .mv-{{ section.id }} .mv-valor:hover{border-color:#77706a}
+  .mv-{{ section.id }} .mv-valor.sel{background:var(--texto);color:#111;border-color:var(--texto)}
+  .mv-{{ section.id }} .mv-valor.agotado{opacity:.35;text-decoration:line-through}
+  .mv-{{ section.id }} .mv-comprar{margin-top:6px;height:54px;border:0;border-radius:2px;background:var(--marca);color:#fff;font:inherit;font-weight:700;
+    letter-spacing:2px;text-transform:uppercase;font-size:14px;cursor:pointer;transition:filter .2s}
+  .mv-{{ section.id }} .mv-comprar:hover{filter:brightness(1.12)}
+  .mv-{{ section.id }} .mv-comprar:disabled{background:#3a3632;color:#8a847d;cursor:not-allowed}
+  .mv-{{ section.id }} .mv-ver{color:var(--gris);font-size:13px}
+  .mv-{{ section.id }} .mv-aviso{position:fixed;left:50%;bottom:24px;z-index:1001;transform:translate(-50%,20px);opacity:0;padding:12px 18px;
+    background:var(--texto);color:#111;border-radius:2px;font-size:14px;font-weight:600;transition:opacity .3s,transform .3s;pointer-events:none}
+  .mv-{{ section.id }} .mv-aviso.ver{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+  .mv-{{ section.id }} .mv-aviso a{color:var(--marca);margin-left:10px}
+
+  @media (max-width:900px){
+    .mv-{{ section.id }} .mv-pared{grid-template-columns:repeat(2,1fr)}
+    .mv-{{ section.id }} .mv-intro{flex-direction:column;align-items:flex-start}
+    .mv-{{ section.id }} .mv-sub{text-align:left}
+    .mv-{{ section.id }} .mv-caja{grid-template-columns:1fr;border-radius:0;height:100%}
+    .mv-{{ section.id }} .mv-vitrina{min-height:55vh}
+    .mv-{{ section.id }} .mv-nicho.on .mv-etiqueta{opacity:1;transform:none}
+    .mv-{{ section.id }} .mv-nicho.on .mv-prenda{filter:sepia(.22) brightness(.85)}
+  }
+  @media (prefers-reduced-motion:reduce){.mv-{{ section.id }} *{transition:none !important;animation:none !important}}
+</style>
+
+<script>
+(function(){
+  var raiz = document.querySelector('.mv-{{ section.id }}');
+  if (!raiz) return;
+  var datosEl = raiz.querySelector('[data-mv-datos]');
+  var productos = datosEl ? JSON.parse(datosEl.textContent) : [];
+  var nichos = [].slice.call(raiz.querySelectorAll('.mv-nicho'));
+  var ficha = raiz.querySelector('.mv-ficha');
+  var q = function(s){ return ficha.querySelector(s); };
+  var actual = null, eleccion = [], ultimoFoco = null;
+
+  /* Encender las vitrinas una por una cuando la sección aparece en pantalla */
+  var reducir = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function encender(){ nichos.forEach(function(n,i){ setTimeout(function(){ n.classList.add('on'); }, reducir ? 0 : 300 + i*260); }); }
+  if ('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(e){ if (e[0].isIntersecting){ encender(); io.disconnect(); } }, {threshold:.25});
+    io.observe(raiz.querySelector('.mv-pared'));
+  } else { encender(); }
+
+  nichos.forEach(function(n){
+    if (n.dataset.index === undefined) return;
+    n.addEventListener('click', function(){ abrir(+n.dataset.index); });
+  });
+
+  function varianteElegida(){
+    if (!actual) return null;
+    return actual.variantes.find(function(v){
+      return v.opciones.every(function(o,i){ return o === eleccion[i]; });
+    }) || null;
+  }
+
+  function pintar(){
+    var p = actual, v = varianteElegida();
+    var opsEl = q('.mv-opciones');
+    opsEl.innerHTML = '';
+    p.opciones.forEach(function(nombre, i){
+      if (p.opciones.length === 1 && p.variantes.length === 1) return; // producto sin variantes
+      var bloque = document.createElement('div');
+      var valores = [];
+      p.variantes.forEach(function(x){ if (valores.indexOf(x.opciones[i]) < 0) valores.push(x.opciones[i]); });
+      bloque.innerHTML = '<p class="mv-rotulo">' + nombre + (eleccion[i] ? ' · <b>' + eleccion[i] + '</b>' : '') + '</p><div class="mv-valores"></div>';
+      var cont = bloque.querySelector('.mv-valores');
+      valores.forEach(function(val){
+        // ¿hay stock combinando este valor con lo ya elegido en las otras opciones?
+        var hay = p.variantes.some(function(x){
+          return x.disponible && x.opciones[i] === val &&
+            x.opciones.every(function(o,j){ return j === i || !eleccion[j] || o === eleccion[j]; });
+        });
+        var b = document.createElement('button');
+        b.type = 'button'; b.textContent = val;
+        b.className = 'mv-valor' + (eleccion[i] === val ? ' sel' : '') + (hay ? '' : ' agotado');
+        b.addEventListener('click', function(){ eleccion[i] = (eleccion[i] === val ? null : val); pintar(); });
+        cont.appendChild(b);
+      });
+      opsEl.appendChild(bloque);
+    });
+
+    q('.mv-precio').textContent = v ? v.precio : p.variantes[0].precio;
+
+    var btn = q('.mv-comprar');
+    var faltan = p.opciones.filter(function(_, i){ return !eleccion[i]; });
+    if (p.variantes.length === 1){ v = p.variantes[0]; faltan = []; }
+    if (faltan.length){ btn.disabled = true; btn.textContent = 'Elegí ' + faltan[0].toLowerCase(); }
+    else if (!v || !v.disponible){ btn.disabled = true; btn.textContent = 'Sin stock'; }
+    else { btn.disabled = false; btn.textContent = 'Agregar al carrito'; }
+  }
+
+  /* ---------- Vistas (espalda / frente) y zoom ---------- */
+  var vitrina = ficha.querySelector('.mv-vitrina');
+  var visor = q('.mv-visor'), foto = q('.mv-foto'), vistasEl = q('.mv-vistas');
+  var vistas = [], vistaActual = 0;
+
+  function etiquetaVista(alt, n){
+    if (/espalda|atr[aá]s|back/i.test(alt)) return 'Espalda';
+    if (/frente|delante|front/i.test(alt)) return 'Frente';
+    return 'Vista ' + (n + 1);
+  }
+  function armarVistas(p){
+    vistas = (p.vistas && p.vistas.length) ? p.vistas : [{src: p.imagen, zoom: p.imagen, alt: p.titulo}];
+    vistaActual = 0;
+    vistasEl.innerHTML = '';
+    if (vistas.length > 1) vistas.forEach(function(vs, n){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'mv-vista'; b.textContent = etiquetaVista(vs.alt, n);
+      b.addEventListener('click', function(e){ e.stopPropagation(); mostrarVista(n, true); });
+      vistasEl.appendChild(b);
+    });
+    mostrarVista(0, false);
+  }
+  function marcarVista(){
+    [].forEach.call(vistasEl.children, function(b, n){
+      b.classList.toggle('sel', n === vistaActual);
+      b.setAttribute('aria-pressed', n === vistaActual);
+    });
+  }
+  function mostrarVista(n, animar){
+    n = (n + vistas.length) % vistas.length;
+    var vs = vistas[n];
+    if (!vs) return;
+    salirZoom();
+    var cambiar = function(){ foto.src = vs.src || ''; foto.alt = vs.alt || ''; foto.dataset.zoom = vs.zoom || vs.src || ''; };
+    var dir = n > vistaActual ? 1 : -1;
+    vistaActual = n; marcarVista();
+    if (!animar || reducir || !foto.animate){ cambiar(); return; }
+    // efecto de girar la remera
+    foto.animate([{transform:'rotateY(0deg)'},{transform:'rotateY(' + (90*dir) + 'deg)'}], {duration:180, easing:'ease-in'}).onfinish = function(){
+      cambiar();
+      foto.animate([{transform:'rotateY(' + (-90*dir) + 'deg)'},{transform:'rotateY(0deg)'}], {duration:220, easing:'ease-out'});
+    };
+  }
+
+  function posZoom(e){
+    var r = visor.getBoundingClientRect();
+    var x = Math.min(100, Math.max(0, (e.clientX - r.left) / r.width * 100));
+    var y = Math.min(100, Math.max(0, (e.clientY - r.top) / r.height * 100));
+    foto.style.transformOrigin = x + '% ' + y + '%';
+  }
+  function entrarZoom(e){
+    if (foto.dataset.zoom && foto.src.indexOf(foto.dataset.zoom) < 0){
+      var alta = new Image();
+      alta.onload = function(){ if (vitrina.classList.contains('zoom')) foto.src = alta.src; };
+      alta.src = foto.dataset.zoom;
+    }
+    if (e) posZoom(e);
+    vitrina.classList.add('zoom');
+  }
+  function salirZoom(){ vitrina.classList.remove('zoom'); foto.style.transformOrigin = '50% 50%'; }
+
+  var inicio = null;
+  visor.addEventListener('pointerdown', function(e){
+    inicio = {x: e.clientX, y: e.clientY, t: Date.now()};
+    if (vitrina.classList.contains('zoom') && e.pointerType !== 'mouse') posZoom(e);
+  });
+  visor.addEventListener('pointermove', function(e){
+    if (!vitrina.classList.contains('zoom')) return;
+    if (e.pointerType === 'mouse' || inicio) posZoom(e);
+  });
+  visor.addEventListener('pointerup', function(e){
+    if (!inicio) return;
+    var dx = e.clientX - inicio.x, dy = e.clientY - inicio.y;
+    var zoom = vitrina.classList.contains('zoom');
+    inicio = null;
+    // deslizar para cambiar de vista (sin zoom)
+    if (!zoom && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)){ mostrarVista(vistaActual + (dx < 0 ? 1 : -1), true); return; }
+    // tocar = zoom on/off (si fue un toque, no un arrastre)
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10){ zoom ? salirZoom() : entrarZoom(e); }
+  });
+  visor.addEventListener('pointercancel', function(){ inicio = null; });
+
+  function abrir(i){
+    actual = productos[i]; if (!actual) return;
+    ultimoFoco = document.activeElement;
+    eleccion = actual.opciones.map(function(){ return null; });
+    q('.mv-linea').textContent = actual.tipo || '{{ shop.name | escape }}';
+    q('.mv-nombre').textContent = actual.titulo;
+    q('.mv-desc').textContent = actual.descripcion;
+    q('.mv-ver').href = actual.url;
+    armarVistas(actual);
+    pintar();
+    ficha.hidden = false;
+    document.documentElement.style.overflow = 'hidden';
+    q('.mv-cerrar').focus();
+  }
+  function cerrar(){
+    salirZoom();
+    ficha.hidden = true;
+    document.documentElement.style.overflow = '';
+    if (ultimoFoco) ultimoFoco.focus();
+  }
+  q('.mv-cerrar').addEventListener('click', cerrar);
+  ficha.addEventListener('click', function(e){ if (e.target === ficha) cerrar(); });
+  document.addEventListener('keydown', function(e){
+    if (ficha.hidden) return;
+    if (e.key === 'Escape'){ vitrina.classList.contains('zoom') ? salirZoom() : cerrar(); }
+    if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && vistas.length > 1 && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)){
+      mostrarVista(vistaActual + (e.key === 'ArrowRight' ? 1 : -1), true);
+    }
+  });
+
+  var aviso = raiz.querySelector('.mv-aviso'), tAviso;
+  function avisar(html){
+    aviso.innerHTML = html; aviso.classList.add('ver');
+    clearTimeout(tAviso); tAviso = setTimeout(function(){ aviso.classList.remove('ver'); }, 4000);
+  }
+
+  q('.mv-comprar').addEventListener('click', function(){
+    var v = actual.variantes.length === 1 ? actual.variantes[0] : varianteElegida();
+    if (!v) return;
+    var btn = this; btn.disabled = true; btn.textContent = 'Agregando…';
+    var raizUrl = (window.Shopify && Shopify.routes && Shopify.routes.root) || '/';
+    fetch(raizUrl + 'cart/add.js', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+      body: JSON.stringify({items: [{id: v.id, quantity: 1}]})
+    }).then(function(r){ return r.json().then(function(d){ return {ok: r.ok, d: d}; }); })
+      .then(function(res){
+        if (!res.ok) throw new Error(res.d.description || res.d.message || 'No se pudo agregar');
+        cerrar();
+        avisar(actual.titulo + ' agregada <a href="' + raizUrl + 'cart">Ver carrito</a>');
+        return fetch(raizUrl + 'cart.js').then(function(r){ return r.json(); }).then(function(c){
+          // avisar al tema (Horizon) para que actualice el contador y el carrito lateral
+          try {
+            var ev = new Event('shopify:cart:lines-update', {bubbles: true});
+            ev.promise = Promise.resolve({
+              cart: {totalQuantity: c.item_count},
+              detail: {itemCount: c.item_count, items: c.items, source: 'mashko-vitrinas', didError: false}
+            });
+            document.dispatchEvent(ev);
+          } catch (e) {}
+        });
+      })
+      .catch(function(err){ avisar(err.message); pintar(); });
+  });
+})();
+</script>
+
+{% schema %}
+{
+  "name": "MASHKO · Vitrinas",
+  "tag": "section",
+  "class": "section-mashko-vitrinas",
+  "settings": [
+    { "type": "collection", "id": "coleccion", "label": "Colección" },
+    { "type": "text", "id": "titulo", "label": "Título", "default": "Dioses Egipcios" },
+    { "type": "text", "id": "subtitulo", "label": "Subtítulo", "default": "Una remera en cada vitrina. Pasá el cursor para encender la luz y tocá la que te guste." },
+    { "type": "range", "id": "cantidad", "label": "Cantidad de vitrinas", "min": 2, "max": 12, "step": 1, "default": 8 },
+    { "type": "range", "id": "columnas", "label": "Columnas en computadora", "min": 2, "max": 6, "step": 1, "default": 5 },
+    { "type": "color", "id": "color_marca", "label": "Color de marca", "default": "#B23A3A" }
+  ],
+  "presets": [
+    { "name": "MASHKO · Vitrinas", "category": "Productos" }
+  ]
+}
+{% endschema %}
