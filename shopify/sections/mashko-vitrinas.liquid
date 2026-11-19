@@ -8,7 +8,13 @@
 {%- assign col = section.settings.coleccion -%}
 {%- assign limite = section.settings.cantidad -%}
 
-<div class="mv mv-{{ section.id }}" data-mv>
+{%- if section.settings.tipografia_egipcia -%}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&display=swap">
+{%- endif -%}
+
+<div class="mv mv-{{ section.id }}{% if section.settings.tipografia_egipcia %} mv-egipcio{% endif %}" data-mv>
   <div class="mv-intro">
     <h2 class="mv-titulo">{{ section.settings.titulo | escape }}<span>.</span></h2>
     {%- if section.settings.subtitulo != blank -%}
@@ -111,6 +117,14 @@
   .mv-{{ section.id }} .mv-intro{max-width:1400px;margin:0 auto clamp(20px,3vw,36px);display:flex;justify-content:space-between;align-items:flex-end;gap:24px}
   .mv-{{ section.id }} .mv-titulo{margin:0;font-size:clamp(36px,6vw,80px);line-height:.95;letter-spacing:-2px;font-weight:700;color:var(--texto)}
   .mv-{{ section.id }} .mv-titulo span{color:var(--marca)}
+  /* Estilo egipcio: mismas letras que los estampados (romanas clásicas, doradas) */
+  .mv-{{ section.id }}.mv-egipcio .mv-titulo{font-family:'Cinzel',Georgia,'Times New Roman',serif;font-weight:700;text-transform:uppercase;
+    font-size:clamp(28px,5.6vw,76px);letter-spacing:.05em;line-height:1.05;
+    background:linear-gradient(180deg,#fff2c4 0%,#e9c46a 28%,#b8862f 52%,#7a5418 64%,#d6a648 82%,#f6dc93 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 2px 0 rgba(0,0,0,.65)) drop-shadow(0 0 22px rgba(214,166,72,.28))}
+  .mv-{{ section.id }}.mv-egipcio .mv-titulo span{display:none}
+  .mv-{{ section.id }}.mv-egipcio .mv-etiqueta strong{font-family:'Cinzel',Georgia,serif;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#ecc97a}
   .mv-{{ section.id }} .mv-sub{margin:0;max-width:320px;color:var(--gris);font-size:15px;line-height:1.5;text-align:right}
 
   .mv-{{ section.id }} .mv-pared{max-width:1400px;margin:0 auto;display:grid;grid-template-columns:repeat(var(--cols),1fr);
@@ -433,7 +447,8 @@
     { "type": "text", "id": "subtitulo", "label": "Subtítulo", "default": "Una remera en cada vitrina. Pasá el cursor para encender la luz y tocá la que te guste." },
     { "type": "range", "id": "cantidad", "label": "Cantidad de vitrinas", "min": 2, "max": 12, "step": 1, "default": 8 },
     { "type": "range", "id": "columnas", "label": "Columnas en computadora", "min": 2, "max": 6, "step": 1, "default": 5 },
-    { "type": "color", "id": "color_marca", "label": "Color de marca", "default": "#B23A3A" }
+    { "type": "color", "id": "color_marca", "label": "Color de marca", "default": "#B23A3A" },
+    { "type": "checkbox", "id": "tipografia_egipcia", "label": "Título con letras doradas estilo egipcio", "default": true }
   ],
   "presets": [
     { "name": "MASHKO · Vitrinas", "category": "Productos" }
