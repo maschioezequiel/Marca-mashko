@@ -52,6 +52,11 @@
         "tipo": {{ product.type | json }},
         "descripcion": {{ product.description | strip_html | truncatewords: 60 | json }},
         "imagen": {{ product.featured_image | image_url: width: 1200 | json }},
+        "vistas": [
+          {%- for img in product.images -%}
+            {"src": {{ img | image_url: width: 1400 | json }}, "zoom": {{ img | image_url: width: 2600 | json }}, "alt": {{ img.alt | default: product.title | json }}}{% unless forloop.last %},{% endunless %}
+          {%- endfor -%}
+        ],
         "opciones": {{ product.options | json }},
         "variantes": [
           {%- for v in product.variants -%}
@@ -75,7 +80,11 @@
       <button type="button" class="mv-cerrar" aria-label="Cerrar">×</button>
       <div class="mv-vitrina">
         <span class="mv-cono"></span><span class="mv-lampara"></span>
-        <img class="mv-foto" alt="">
+        <div class="mv-visor" aria-label="Tocá para hacer zoom">
+          <img class="mv-foto" alt="" draggable="false">
+        </div>
+        <p class="mv-pista"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5M11 8v6M8 11h6"/></svg><span>Tocá la remera para hacer zoom</span></p>
+        <div class="mv-vistas" role="group" aria-label="Vistas de la remera"></div>
       </div>
       <div class="mv-info">
         <p class="mv-linea"></p>
@@ -143,8 +152,24 @@
   .mv-{{ section.id }} .mv-vitrina{position:relative;min-height:520px;background:#0a0a0a;overflow:hidden;box-shadow:inset 0 30px 50px rgba(0,0,0,.9)}
   .mv-{{ section.id }} .mv-vitrina .mv-cono{opacity:1}
   .mv-{{ section.id }} .mv-vitrina .mv-lampara{width:30%;height:9px;background:#ffe9c7;box-shadow:0 0 26px 6px rgba(var(--luz),.6)}
-  .mv-{{ section.id }} .mv-foto{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:1;filter:sepia(.2) brightness(.97);
+  .mv-{{ section.id }} .mv-visor{position:absolute;inset:0;z-index:1;overflow:hidden;perspective:1400px;cursor:zoom-in;touch-action:pan-y;-webkit-user-select:none;user-select:none}
+  .mv-{{ section.id }} .mv-foto{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;filter:sepia(.2) brightness(.97);
+    transition:transform .35s ease,filter .35s;transform-origin:50% 50%;will-change:transform;
     -webkit-mask-image:radial-gradient(ellipse 58% 60% at 50% 48%,#000 55%,transparent 100%);mask-image:radial-gradient(ellipse 58% 60% at 50% 48%,#000 55%,transparent 100%)}
+  .mv-{{ section.id }} .mv-vitrina.zoom .mv-visor{cursor:zoom-out;touch-action:none;background:#f4f3f1}
+  .mv-{{ section.id }} .mv-vitrina.zoom .mv-foto{transform:scale(2.4);filter:none;transition:transform .35s ease,filter .35s,transform-origin .08s linear;
+    -webkit-mask-image:none;mask-image:none}
+  .mv-{{ section.id }} .mv-vitrina.zoom .mv-cono,.mv-{{ section.id }} .mv-vitrina.zoom .mv-lampara,.mv-{{ section.id }} .mv-vitrina.zoom .mv-pista{opacity:0}
+  .mv-{{ section.id }} .mv-pista{position:absolute;top:22px;left:18px;z-index:3;margin:0;display:flex;align-items:center;gap:6px;font-size:12px;
+    color:rgba(243,239,233,.75);pointer-events:none;transition:opacity .3s}
+  .mv-{{ section.id }} .mv-pista svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+  .mv-{{ section.id }} .mv-vistas{position:absolute;left:50%;bottom:18px;z-index:3;transform:translateX(-50%);display:flex;gap:4px;padding:4px;
+    background:rgba(10,10,10,.72);border:1px solid #3a3632;border-radius:999px;backdrop-filter:blur(6px)}
+  .mv-{{ section.id }} .mv-vistas:empty{display:none}
+  .mv-{{ section.id }} .mv-vista{border:0;background:transparent;color:var(--texto);font:inherit;font-size:13px;font-weight:600;letter-spacing:.5px;
+    padding:8px 16px;border-radius:999px;cursor:pointer;transition:background .2s,color .2s}
+  .mv-{{ section.id }} .mv-vista.sel{background:var(--texto);color:#111}
+  .mv-{{ section.id }} .mv-vista:focus-visible{outline:2px solid var(--marca);outline-offset:2px}
   .mv-{{ section.id }} .mv-info{padding:clamp(24px,4vw,48px);display:flex;flex-direction:column;gap:18px}
   .mv-{{ section.id }} .mv-linea{margin:0;font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:var(--marca);font-weight:700}
   .mv-{{ section.id }} .mv-nombre{margin:-8px 0 0;font-size:clamp(28px,3.2vw,42px);line-height:1.05;letter-spacing:-1px;color:var(--texto)}
@@ -205,8 +230,6 @@
     n.addEventListener('click', function(){ abrir(+n.dataset.index); });
   });
 
-  function esTalle(nombre){ return /talle|size|tama/i.test(nombre); }
-
   function varianteElegida(){
     if (!actual) return null;
     return actual.variantes.find(function(v){
@@ -240,13 +263,6 @@
       opsEl.appendChild(bloque);
     });
 
-    // foto: la de la variante si existe, o la de una variante con el color elegido
-    var conFoto = v && v.imagen ? v : p.variantes.find(function(x){
-      return x.imagen && x.opciones.every(function(o,j){ return esTalle(p.opciones[j]) || !eleccion[j] || o === eleccion[j]; });
-    });
-    var foto = q('.mv-foto');
-    foto.src = (conFoto && conFoto.imagen) || p.imagen || '';
-    foto.alt = p.titulo;
     q('.mv-precio').textContent = v ? v.precio : p.variantes[0].precio;
 
     var btn = q('.mv-comprar');
@@ -257,6 +273,88 @@
     else { btn.disabled = false; btn.textContent = 'Agregar al carrito'; }
   }
 
+  /* ---------- Vistas (espalda / frente) y zoom ---------- */
+  var vitrina = ficha.querySelector('.mv-vitrina');
+  var visor = q('.mv-visor'), foto = q('.mv-foto'), vistasEl = q('.mv-vistas');
+  var vistas = [], vistaActual = 0;
+
+  function etiquetaVista(alt, n){
+    if (/espalda|atr[aá]s|back/i.test(alt)) return 'Espalda';
+    if (/frente|delante|front/i.test(alt)) return 'Frente';
+    return 'Vista ' + (n + 1);
+  }
+  function armarVistas(p){
+    vistas = (p.vistas && p.vistas.length) ? p.vistas : [{src: p.imagen, zoom: p.imagen, alt: p.titulo}];
+    vistaActual = 0;
+    vistasEl.innerHTML = '';
+    if (vistas.length > 1) vistas.forEach(function(vs, n){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'mv-vista'; b.textContent = etiquetaVista(vs.alt, n);
+      b.addEventListener('click', function(e){ e.stopPropagation(); mostrarVista(n, true); });
+      vistasEl.appendChild(b);
+    });
+    mostrarVista(0, false);
+  }
+  function marcarVista(){
+    [].forEach.call(vistasEl.children, function(b, n){
+      b.classList.toggle('sel', n === vistaActual);
+      b.setAttribute('aria-pressed', n === vistaActual);
+    });
+  }
+  function mostrarVista(n, animar){
+    n = (n + vistas.length) % vistas.length;
+    var vs = vistas[n];
+    if (!vs) return;
+    salirZoom();
+    var cambiar = function(){ foto.src = vs.src || ''; foto.alt = vs.alt || ''; foto.dataset.zoom = vs.zoom || vs.src || ''; };
+    var dir = n > vistaActual ? 1 : -1;
+    vistaActual = n; marcarVista();
+    if (!animar || reducir || !foto.animate){ cambiar(); return; }
+    // efecto de girar la remera
+    foto.animate([{transform:'rotateY(0deg)'},{transform:'rotateY(' + (90*dir) + 'deg)'}], {duration:180, easing:'ease-in'}).onfinish = function(){
+      cambiar();
+      foto.animate([{transform:'rotateY(' + (-90*dir) + 'deg)'},{transform:'rotateY(0deg)'}], {duration:220, easing:'ease-out'});
+    };
+  }
+
+  function posZoom(e){
+    var r = visor.getBoundingClientRect();
+    var x = Math.min(100, Math.max(0, (e.clientX - r.left) / r.width * 100));
+    var y = Math.min(100, Math.max(0, (e.clientY - r.top) / r.height * 100));
+    foto.style.transformOrigin = x + '% ' + y + '%';
+  }
+  function entrarZoom(e){
+    if (foto.dataset.zoom && foto.src.indexOf(foto.dataset.zoom) < 0){
+      var alta = new Image();
+      alta.onload = function(){ if (vitrina.classList.contains('zoom')) foto.src = alta.src; };
+      alta.src = foto.dataset.zoom;
+    }
+    if (e) posZoom(e);
+    vitrina.classList.add('zoom');
+  }
+  function salirZoom(){ vitrina.classList.remove('zoom'); foto.style.transformOrigin = '50% 50%'; }
+
+  var inicio = null;
+  visor.addEventListener('pointerdown', function(e){
+    inicio = {x: e.clientX, y: e.clientY, t: Date.now()};
+    if (vitrina.classList.contains('zoom') && e.pointerType !== 'mouse') posZoom(e);
+  });
+  visor.addEventListener('pointermove', function(e){
+    if (!vitrina.classList.contains('zoom')) return;
+    if (e.pointerType === 'mouse' || inicio) posZoom(e);
+  });
+  visor.addEventListener('pointerup', function(e){
+    if (!inicio) return;
+    var dx = e.clientX - inicio.x, dy = e.clientY - inicio.y;
+    var zoom = vitrina.classList.contains('zoom');
+    inicio = null;
+    // deslizar para cambiar de vista (sin zoom)
+    if (!zoom && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)){ mostrarVista(vistaActual + (dx < 0 ? 1 : -1), true); return; }
+    // tocar = zoom on/off (si fue un toque, no un arrastre)
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10){ zoom ? salirZoom() : entrarZoom(e); }
+  });
+  visor.addEventListener('pointercancel', function(){ inicio = null; });
+
   function abrir(i){
     actual = productos[i]; if (!actual) return;
     ultimoFoco = document.activeElement;
@@ -265,19 +363,27 @@
     q('.mv-nombre').textContent = actual.titulo;
     q('.mv-desc').textContent = actual.descripcion;
     q('.mv-ver').href = actual.url;
+    armarVistas(actual);
     pintar();
     ficha.hidden = false;
     document.documentElement.style.overflow = 'hidden';
     q('.mv-cerrar').focus();
   }
   function cerrar(){
+    salirZoom();
     ficha.hidden = true;
     document.documentElement.style.overflow = '';
     if (ultimoFoco) ultimoFoco.focus();
   }
   q('.mv-cerrar').addEventListener('click', cerrar);
   ficha.addEventListener('click', function(e){ if (e.target === ficha) cerrar(); });
-  document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !ficha.hidden) cerrar(); });
+  document.addEventListener('keydown', function(e){
+    if (ficha.hidden) return;
+    if (e.key === 'Escape'){ vitrina.classList.contains('zoom') ? salirZoom() : cerrar(); }
+    if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && vistas.length > 1 && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)){
+      mostrarVista(vistaActual + (e.key === 'ArrowRight' ? 1 : -1), true);
+    }
+  });
 
   var aviso = raiz.querySelector('.mv-aviso'), tAviso;
   function avisar(html){
