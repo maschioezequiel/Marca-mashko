@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MASHKO · Tienda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+:root{
+  --bg:#0d0d0d; --wall:#151413; --nicho:#0a0a0a; --borde:#2a2724;
+  --luz:255,214,160; --marca:#B23A3A; --texto:#f3efe9; --gris:#9a948c;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--texto);font-family:Inter,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:inherit}
+
+/* ---------- Encabezado ---------- */
+header{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:24px;
+  padding:18px clamp(18px,4vw,48px);background:rgba(13,13,13,.86);backdrop-filter:blur(10px);border-bottom:1px solid #1f1d1b}
+.logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;letter-spacing:6px;color:var(--marca);text-decoration:none}
+nav{display:flex;gap:clamp(12px,2.4vw,30px);align-items:center;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gris)}
+nav button,nav a{background:none;border:0;padding:6px 0;text-decoration:none;transition:color .2s}
+nav button:hover,nav a:hover,nav button.activo{color:var(--texto)}
+.carrito{border:1px solid #3a3632 !important;padding:8px 14px !important;border-radius:2px;color:var(--texto)}
+.carrito b{display:inline-block;min-width:18px;margin-left:6px;padding:0 5px;border-radius:9px;background:var(--marca);color:#fff;font-size:11px;text-align:center}
+
+/* ---------- Pared de vitrinas ---------- */
+main{padding:clamp(28px,5vw,64px) clamp(14px,4vw,48px) 80px;max-width:1400px;margin:0 auto}
+.intro{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:clamp(22px,3vw,36px)}
+.intro h1{margin:0;font-family:'Space Grotesk',sans-serif;font-size:clamp(40px,7vw,88px);line-height:.92;letter-spacing:-2px;font-weight:700}
+.intro h1 span{color:var(--marca)}
+.intro p{margin:0;max-width:300px;color:var(--gris);font-size:15px;line-height:1.5;text-align:right}
+
+.pared{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(10px,1.6vw,22px);padding:clamp(10px,1.6vw,22px);
+  background:linear-gradient(180deg,#1b1916,#121110);border:1px solid #24211e;border-radius:4px;
+  box-shadow:inset 0 0 60px rgba(0,0,0,.7),0 40px 80px rgba(0,0,0,.5)}
+
+.nicho{position:relative;aspect-ratio:4/5;border:0;padding:0;background:var(--nicho);overflow:hidden;border-radius:2px;
+  box-shadow:inset 0 0 0 1px var(--borde),inset 0 18px 30px rgba(0,0,0,.9),inset 0 -10px 24px rgba(0,0,0,.8);outline:none}
+/* foco en el techo */
+.nicho .lampara{position:absolute;top:0;left:50%;width:34%;height:7px;transform:translateX(-50%);border-radius:0 0 6px 6px;
+  background:#2b2824;transition:background .5s,box-shadow .5s;z-index:3}
+/* cono de luz */
+.nicho .cono{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .6s ease;z-index:1;
+  background:
+    radial-gradient(ellipse 55% 85% at 50% -8%,rgba(var(--luz),.55),rgba(var(--luz),.12) 55%,transparent 75%),
+    radial-gradient(ellipse 45% 10% at 50% 93%,rgba(var(--luz),.22),transparent 70%)}
+.nicho .prenda{position:absolute;inset:10% 9% 12%;z-index:2;transition:filter .6s ease,transform .6s ease;
+  filter:brightness(.18) saturate(.4)}
+.nicho .prenda svg{width:100%;height:100%;display:block;filter:drop-shadow(0 18px 18px rgba(0,0,0,.6))}
+.nicho .etiqueta{position:absolute;left:0;right:0;bottom:7%;z-index:3;text-align:center;opacity:0;transform:translateY(6px);
+  transition:opacity .35s,transform .35s}
+.etiqueta strong{display:block;font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:clamp(12px,1.25vw,16px);letter-spacing:.5px}
+.etiqueta small{display:block;margin-top:3px;font-size:clamp(11px,1vw,13px);color:rgba(var(--luz),.9)}
+
+/* encendido de ambiente */
+.nicho.on .lampara{background:#ffe9c7;box-shadow:0 0 18px 4px rgba(var(--luz),.55)}
+.nicho.on .cono{opacity:.45}
+.nicho.on .prenda{filter:brightness(.55) saturate(.8)}
+/* foco al pasar / enfocar */
+.nicho.on:hover .cono,.nicho.on:focus-visible .cono,.nicho.on.tap .cono{opacity:1}
+.nicho.on:hover .prenda,.nicho.on:focus-visible .prenda,.nicho.on.tap .prenda{filter:brightness(1.05) saturate(1);transform:translateY(-2%) scale(1.03)}
+.nicho.on:hover .etiqueta,.nicho.on:focus-visible .etiqueta,.nicho.on.tap .etiqueta{opacity:1;transform:none}
+.nicho:focus-visible{box-shadow:inset 0 0 0 2px var(--marca)}
+.nicho.oculto{display:none}
+
+.pie{display:flex;justify-content:space-between;gap:16px;margin-top:18px;color:#6e6962;font-size:12px;letter-spacing:1.5px;text-transform:uppercase}
+
+/* ---------- Ficha de producto ---------- */
+.ficha{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:clamp(0px,3vw,40px);
+  background:rgba(5,5,5,.82);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .35s}
+.ficha.abierta{opacity:1;pointer-events:auto}
+.ficha-caja{position:relative;display:grid;grid-template-columns:1.15fr 1fr;width:min(1120px,100%);max-height:100%;overflow:auto;
+  background:#121110;border:1px solid #26231f;border-radius:4px;transform:translateY(16px) scale(.98);transition:transform .35s}
+.ficha.abierta .ficha-caja{transform:none}
+.cerrar{position:absolute;top:12px;right:12px;z-index:5;width:40px;height:40px;border-radius:50%;border:1px solid #3a3632;background:#151413;font-size:20px;line-height:1}
+.ficha-vitrina{position:relative;min-height:520px;background:var(--nicho);overflow:hidden;
+  box-shadow:inset 0 30px 50px rgba(0,0,0,.9)}
+.ficha-vitrina .cono{opacity:1;position:absolute;inset:0;
+  background:radial-gradient(ellipse 50% 80% at 50% -6%,rgba(var(--luz),.6),rgba(var(--luz),.12) 55%,transparent 75%),
+             radial-gradient(ellipse 40% 8% at 50% 92%,rgba(var(--luz),.25),transparent 70%)}
+.ficha-vitrina .lampara{position:absolute;top:0;left:50%;width:30%;height:9px;transform:translateX(-50%);border-radius:0 0 8px 8px;background:#ffe9c7;box-shadow:0 0 26px 6px rgba(var(--luz),.6)}
+.ficha-vitrina .prenda{position:absolute;inset:9% 10% 9%}
+.ficha-vitrina .prenda svg{width:100%;height:100%;filter:drop-shadow(0 24px 22px rgba(0,0,0,.65))}
+.ficha-info{padding:clamp(24px,4vw,48px);display:flex;flex-direction:column;gap:18px}
+.linea{margin:0;font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:var(--marca);font-weight:700}
+.ficha-info h2{margin:-8px 0 0;font-family:'Space Grotesk',sans-serif;font-size:clamp(30px,3.4vw,44px);line-height:1;letter-spacing:-1px}
+.precio{margin:0;font-size:22px;font-weight:600}
+.desc{margin:0;color:#bdb6ad;font-size:15px;line-height:1.6}
+.rotulo{margin:0 0 8px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gris);display:flex;justify-content:space-between}
+.rotulo a{color:var(--texto);text-transform:none;letter-spacing:0;font-size:13px}
+.colores{display:flex;gap:10px;flex-wrap:wrap}
+.color{width:32px;height:32px;border-radius:50%;border:2px solid #121110;box-shadow:0 0 0 1px #4a453f;padding:0}
+.color.sel{box-shadow:0 0 0 2px var(--texto)}
+.talles{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.talle{height:44px;border:1px solid #3a3632;background:transparent;border-radius:2px;font-weight:600;font-size:14px;transition:background .2s,border-color .2s}
+.talle:hover{border-color:#77706a}
+.talle.sel{background:var(--texto);color:#111;border-color:var(--texto)}
+.comprar{margin-top:6px;height:54px;border:0;border-radius:2px;background:var(--marca);color:#fff;font-weight:700;letter-spacing:2px;text-transform:uppercase;font-size:14px;transition:filter .2s}
+.comprar:hover{filter:brightness(1.12)}
+.comprar:disabled{background:#3a3632;color:#8a847d;cursor:not-allowed}
+.datos{margin:0;padding:0;list-style:none;display:grid;gap:6px;font-size:13px;color:var(--gris)}
+.datos li::before{content:"— ";color:#5a554f}
+
+.aviso{position:fixed;left:50%;bottom:24px;z-index:60;transform:translate(-50%,20px);opacity:0;padding:12px 18px;background:var(--texto);color:#111;
+  border-radius:2px;font-size:14px;font-weight:600;transition:opacity .3s,transform .3s;pointer-events:none}
+.aviso.ver{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:900px){
+  .pared{grid-template-columns:repeat(2,1fr)}
+  .intro{flex-direction:column;align-items:flex-start}
+  .intro p{text-align:left}
+  nav .solo-desk{display:none}
+  nav{gap:12px;font-size:11px;letter-spacing:1px;white-space:nowrap}
+  .logo{font-size:18px;letter-spacing:4px}
+  .carrito{padding:6px 10px !important}
+  .ficha-caja{grid-template-columns:1fr;border-radius:0;height:100%}
+  .ficha-vitrina{min-height:58vh}
+  /* en pantallas táctiles la etiqueta siempre está visible */
+  .nicho.on .etiqueta{opacity:1;transform:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="#">MASHKO</a>
+  <nav>
+    <button class="activo" data-filtro="todas">Todas</button>
+    <button data-filtro="boxy">Boxy fit</button>
+    <button data-filtro="regular">Regular</button>
+    <a class="solo-desk" href="../guia-de-talles/tabla-talles-boxy-fit.html" target="_blank">Guía de talles</a>
+    <button class="carrito" id="btnCarrito">Carrito<b id="contador">0</b></button>
+  </nav>
+</header>
+
+<main>
+  <div class="intro">
+    <h1>Remeras<br>MASHKO<span>.</span></h1>
+    <p>Ocho vitrinas, una remera en cada una. Pasá el cursor para encender la luz y tocá la que te guste.</p>
+  </div>
+
+  <section class="pared" id="pared" aria-label="Vitrinas de productos"></section>
+
+  <div class="pie"><span>Algodón peinado 24/1</span><span>Envíos a todo el país</span></div>
+</main>
+
+<div class="ficha" id="ficha" role="dialog" aria-modal="true" aria-labelledby="fNombre">
+  <div class="ficha-caja">
+    <button class="cerrar" id="cerrar" aria-label="Cerrar">×</button>
+    <div class="ficha-vitrina"><div class="cono"></div><div class="lampara"></div><div class="prenda" id="fPrenda"></div></div>
+    <div class="ficha-info">
+      <p class="linea" id="fLinea"></p>
+      <h2 id="fNombre"></h2>
+      <p class="precio" id="fPrecio"></p>
+      <p class="desc" id="fDesc"></p>
+      <div>
+        <p class="rotulo"><span>Color · <b id="fColor" style="color:var(--texto);letter-spacing:0;text-transform:none;font-weight:500"></b></span></p>
+        <div class="colores" id="fColores"></div>
+      </div>
+      <div>
+        <p class="rotulo"><span>Talle</span><a id="fGuia" href="#" target="_blank">Ver guía de talles</a></p>
+        <div class="talles" id="fTalles"></div>
+      </div>
+      <button class="comprar" id="fComprar" disabled>Elegí un talle</button>
+      <ul class="datos" id="fDatos"></ul>
+    </div>
+  </div>
+</div>
+
+<div class="aviso" id="aviso"></div>
+
+<script>
+/* ===== Catálogo (editar nombres, precios y colores acá) ===== */
+const PRODUCTOS = [
+  {id:'boxy-negro',     corte:'boxy',    nombre:'Boxy Noche',    color:'Negro',        hex:'#1c1c1e', precio:32000},
+  {id:'boxy-blanco',    corte:'boxy',    nombre:'Boxy Tiza',     color:'Blanco',       hex:'#ecebe6', precio:32000},
+  {id:'boxy-arena',     corte:'boxy',    nombre:'Boxy Arena',    color:'Arena',        hex:'#c9b393', precio:32000},
+  {id:'boxy-bordo',     corte:'boxy',    nombre:'Boxy Vino',     color:'Bordó',        hex:'#6b1f2a', precio:32000},
+  {id:'reg-gris',       corte:'regular', nombre:'Regular Humo',  color:'Gris melange', hex:'#8d8d8f', precio:27000},
+  {id:'reg-oliva',      corte:'regular', nombre:'Regular Monte', color:'Verde oliva',  hex:'#5a5f3c', precio:27000},
+  {id:'reg-marino',     corte:'regular', nombre:'Regular Puerto',color:'Azul marino',  hex:'#1f2a44', precio:27000},
+  {id:'reg-rojo',       corte:'regular', nombre:'Regular MASHKO',color:'Rojo MASHKO',  hex:'#B23A3A', precio:27000},
+];
+const TALLES = ['S','M','L','XL','XXL'];
+const CORTES = {
+  boxy:{
+    linea:'Remera · Boxy fit',
+    desc:'Corte cuadrado y amplio, hombro caído y manga ancha. Cuello redondo con tira de 3 cm. Pensada para usarse suelta.',
+    guia:'../guia-de-talles/tabla-talles-boxy-fit.html',
+    datos:['Hombro caído','Cuello redondo, tira de 3 cm','Algodón peinado 24/1'],
+    // silueta tomada de la guía de talles boxy fit
+    cuerpo:'M330,40 C330,105 470,105 470,40 L630,90 L770,170 L710,320 L630,290 L630,540 L170,540 L170,290 L90,320 L30,170 L170,90 Z',
+    cuello:'M330,40 C330,105 470,105 470,40 L492,47 C492,135 308,135 308,47 Z',
+    costuras:'M170,90 L170,290 M630,90 L630,290'
+  },
+  regular:{
+    linea:'Remera · Regular fit',
+    desc:'Calce clásico, ni ajustado ni suelto. Hombro en su lugar y cuello redondo con tira de 3 cm. La básica de todos los días.',
+    guia:'../guia-de-talles/tabla-talles-regular.html',
+    datos:['Calce clásico','Cuello redondo, tira de 3 cm','Algodón peinado 24/1'],
+    // silueta tomada de la guía de talles regular
+    cuerpo:'M335,40 C335,105 465,105 465,40 L600,75 L730,160 L685,300 L605,265 L605,560 L195,560 L195,265 L115,300 L70,160 L200,75 Z',
+    cuello:'M335,40 C335,105 465,105 465,40 L487,46 C487,135 313,135 313,46 Z',
+    costuras:'M200,75 Q228,170 195,265 M600,75 Q572,170 605,265'
+  }
+};
+const fmt = n => '$ ' + n.toLocaleString('es-AR');
+
+/* ===== Dibujo de la remera con percha ===== */
+function claro(hex){const n=parseInt(hex.slice(1),16);return ((n>>16)*299+((n>>8)&255)*587+(n&255)*114)/1000>150}
+function remeraSVG(p, uid){
+  const c = CORTES[p.corte];
+  const linea = claro(p.hex) ? 'rgba(0,0,0,.28)' : 'rgba(255,255,255,.14)';
+  return `<svg viewBox="0 -120 800 700" aria-hidden="true">
+    <defs>
+      <linearGradient id="sh${uid}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/>
+        <stop offset="1" stop-color="#000" stop-opacity=".35"/></linearGradient>
+      <linearGradient id="sv${uid}" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#000" stop-opacity=".3"/><stop offset=".5" stop-color="#000" stop-opacity="0"/>
+        <stop offset="1" stop-color="#000" stop-opacity=".3"/></linearGradient>
+    </defs>
+    <!-- percha -->
+    <path d="M400,-96 c0,-14 18,-14 18,-2 c0,10 -18,14 -18,30 L400,-48" fill="none" stroke="#b8b2a8" stroke-width="6" stroke-linecap="round"/>
+    <path d="M400,-50 L${p.corte==='boxy'?175:205},70 M400,-50 L${p.corte==='boxy'?625:595},70" stroke="#6b5440" stroke-width="12" stroke-linecap="round"/>
+    <!-- prenda -->
+    <path d="${c.cuerpo}" fill="${p.hex}"/>
+    <path d="${c.cuerpo}" fill="url(#sh${uid})"/>
+    <path d="${c.cuerpo}" fill="url(#sv${uid})"/>
+    <path d="${c.cuello}" fill="${p.hex}"/>
+    <path d="${c.cuello}" fill="#000" fill-opacity=".18"/>
+    <path d="M${p.corte==='boxy'?'330,40 C330,105 470,105 470,40':'335,40 C335,105 465,105 465,40'} Q400,58 ${p.corte==='boxy'?330:335},40 Z" fill="#000" fill-opacity=".45"/>
+    <path d="${c.costuras}" fill="none" stroke="${linea}" stroke-width="2.5" stroke-dasharray="7 6"/>
+    <text x="400" y="${p.corte==='boxy'?200:190}" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-weight="700"
+      font-size="34" letter-spacing="9" fill="${claro(p.hex)?'#1a1a1a':'#f3efe9'}" fill-opacity=".85">MASHKO</text>
+  </svg>`;
+}
+
+/* ===== Pared ===== */
+const pared = document.getElementById('pared');
+PRODUCTOS.forEach((p,i)=>{
+  const b = document.createElement('button');
+  b.className = 'nicho'; b.dataset.id = p.id; b.dataset.corte = p.corte;
+  b.setAttribute('aria-label', `${p.nombre}, ${p.color}, ${fmt(p.precio)}`);
+  b.innerHTML = `<div class="lampara"></div><div class="cono"></div>
+    <div class="prenda">${remeraSVG(p,'n'+i)}</div>
+    <div class="etiqueta"><strong>${p.nombre}</strong><small>${fmt(p.precio)}</small></div>`;
+  b.addEventListener('click', ()=>abrir(p.id));
+  pared.appendChild(b);
+});
+
+/* Encendido vitrina por vitrina al cargar */
+const nichos = [...pared.children];
+const reducir = matchMedia('(prefers-reduced-motion: reduce)').matches;
+nichos.forEach((n,i)=>setTimeout(()=>n.classList.add('on'), reducir ? 0 : 400 + i*260));
+
+/* Filtros */
+document.querySelectorAll('[data-filtro]').forEach(btn=>btn.addEventListener('click',()=>{
+  document.querySelectorAll('[data-filtro]').forEach(x=>x.classList.toggle('activo',x===btn));
+  const f = btn.dataset.filtro;
+  nichos.forEach(n=>n.classList.toggle('oculto', f!=='todas' && n.dataset.corte!==f));
+}));
+
+/* ===== Ficha ===== */
+const ficha = document.getElementById('ficha');
+const $ = id => document.getElementById(id);
+let actual = null, talle = null, ultimoFoco = null, carrito = 0;
+
+function pintar(p){
+  const c = CORTES[p.corte];
+  actual = p;
+  $('fPrenda').innerHTML = remeraSVG(p,'f');
+  $('fLinea').textContent = c.linea;
+  $('fNombre').textContent = p.nombre;
+  $('fPrecio').textContent = fmt(p.precio);
+  $('fDesc').textContent = c.desc;
+  $('fColor').textContent = p.color;
+  $('fGuia').href = c.guia;
+  $('fDatos').innerHTML = c.datos.map(d=>`<li>${d}</li>`).join('');
+  $('fColores').innerHTML = PRODUCTOS.filter(x=>x.corte===p.corte).map(x=>
+    `<button class="color${x.id===p.id?' sel':''}" style="background:${x.hex}" data-id="${x.id}" aria-label="${x.color}" title="${x.color}"></button>`).join('');
+  $('fColores').querySelectorAll('.color').forEach(b=>b.addEventListener('click',()=>pintar(PRODUCTOS.find(x=>x.id===b.dataset.id))));
+}
+function pintarTalles(){
+  $('fTalles').innerHTML = TALLES.map(t=>`<button class="talle${t===talle?' sel':''}">${t}</button>`).join('');
+  $('fTalles').querySelectorAll('.talle').forEach(b=>b.addEventListener('click',()=>{talle=b.textContent;pintarTalles();}));
+  const btn = $('fComprar');
+  btn.disabled = !talle;
+  btn.textContent = talle ? `Agregar al carrito · ${talle}` : 'Elegí un talle';
+}
+function abrir(id){
+  ultimoFoco = document.activeElement;
+  talle = null;
+  pintar(PRODUCTOS.find(p=>p.id===id));
+  pintarTalles();
+  ficha.classList.add('abierta');
+  document.body.style.overflow='hidden';
+  $('cerrar').focus();
+}
+function cerrar(){
+  ficha.classList.remove('abierta');
+  document.body.style.overflow='';
+  ultimoFoco && ultimoFoco.focus();
+}
+$('cerrar').addEventListener('click',cerrar);
+ficha.addEventListener('click',e=>{ if(e.target===ficha) cerrar(); });
+addEventListener('keydown',e=>{ if(e.key==='Escape' && ficha.classList.contains('abierta')) cerrar(); });
+
+$('fComprar').addEventListener('click',()=>{
+  carrito++; $('contador').textContent = carrito;
+  avisar(`${actual.nombre} · talle ${talle} agregada al carrito`);
+  cerrar();
+});
+$('btnCarrito').addEventListener('click',()=>avisar(carrito ? `Tenés ${carrito} ${carrito===1?'prenda':'prendas'} en el carrito` : 'Tu carrito está vacío'));
+
+let tAviso;
+function avisar(txt){
+  const a = $('aviso'); a.textContent = txt; a.classList.add('ver');
+  clearTimeout(tAviso); tAviso = setTimeout(()=>a.classList.remove('ver'), 2400);
+}
+</script>
+</body>
+</html>
