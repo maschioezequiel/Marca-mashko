@@ -1,5 +1,5 @@
 {
   "permissions": {
-    "allow": ["mcp__Shopify__theme_publish"]
+    "allow": ["mcp__Shopify__*"]
   }
 }
