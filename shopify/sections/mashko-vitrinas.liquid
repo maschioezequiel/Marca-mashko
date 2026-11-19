@@ -115,16 +115,18 @@
   .mv-{{ section.id }} .mv-cono{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .6s;z-index:2;mix-blend-mode:screen;
     background:radial-gradient(ellipse 55% 85% at 50% -8%,rgba(var(--luz),.5),rgba(var(--luz),.1) 55%,transparent 75%),
                radial-gradient(ellipse 45% 10% at 50% 93%,rgba(var(--luz),.2),transparent 70%)}
-  .mv-{{ section.id }} .mv-prenda{position:absolute;inset:9% 8% 14%;z-index:1;transition:filter .6s,transform .6s;filter:brightness(.15) saturate(.4)}
-  .mv-{{ section.id }} .mv-prenda img{width:100%;height:100%;object-fit:contain;display:block}
+  .mv-{{ section.id }} .mv-prenda{position:absolute;inset:0;z-index:1;transition:filter .6s,transform .6s;filter:brightness(.12) saturate(.4)}
+  .mv-{{ section.id }} .mv-prenda img{width:100%;height:100%;object-fit:cover;object-position:50% 40%;display:block;
+    -webkit-mask-image:radial-gradient(ellipse 62% 58% at 50% 44%,#000 50%,transparent 100%);mask-image:radial-gradient(ellipse 62% 58% at 50% 44%,#000 50%,transparent 100%)}
   .mv-{{ section.id }} .mv-etiqueta{position:absolute;left:0;right:0;bottom:4%;z-index:3;text-align:center;opacity:0;transform:translateY(6px);transition:opacity .35s,transform .35s}
+  .mv-{{ section.id }} .mv-etiqueta{text-shadow:0 1px 8px rgba(0,0,0,.9),0 0 2px rgba(0,0,0,.8)}
   .mv-{{ section.id }} .mv-etiqueta strong{display:block;font-size:clamp(12px,1.25vw,16px);letter-spacing:.5px;font-weight:600}
   .mv-{{ section.id }} .mv-etiqueta small{display:block;margin-top:3px;font-size:clamp(11px,1vw,13px);color:rgba(var(--luz),.9)}
   .mv-{{ section.id }} .mv-nicho.on .mv-lampara{background:#ffe9c7;box-shadow:0 0 18px 4px rgba(var(--luz),.55)}
   .mv-{{ section.id }} .mv-nicho.on .mv-cono{opacity:.45}
-  .mv-{{ section.id }} .mv-nicho.on .mv-prenda{filter:brightness(.5) saturate(.8)}
+  .mv-{{ section.id }} .mv-nicho.on .mv-prenda{filter:sepia(.35) brightness(.5) saturate(.8)}
   .mv-{{ section.id }} .mv-nicho.on:hover .mv-cono,.mv-{{ section.id }} .mv-nicho.on:focus-visible .mv-cono{opacity:1}
-  .mv-{{ section.id }} .mv-nicho.on:hover .mv-prenda,.mv-{{ section.id }} .mv-nicho.on:focus-visible .mv-prenda{filter:none;transform:translateY(-2%) scale(1.03)}
+  .mv-{{ section.id }} .mv-nicho.on:hover .mv-prenda,.mv-{{ section.id }} .mv-nicho.on:focus-visible .mv-prenda{filter:sepia(.22) brightness(.97);transform:scale(1.03)}
   .mv-{{ section.id }} .mv-nicho.on:hover .mv-etiqueta,.mv-{{ section.id }} .mv-nicho.on:focus-visible .mv-etiqueta{opacity:1;transform:none}
   .mv-{{ section.id }} .mv-nicho:focus-visible{outline:2px solid var(--marca);outline-offset:-2px}
   .mv-{{ section.id }} .mv-vacio{cursor:default}
@@ -141,7 +143,8 @@
   .mv-{{ section.id }} .mv-vitrina{position:relative;min-height:520px;background:#0a0a0a;overflow:hidden;box-shadow:inset 0 30px 50px rgba(0,0,0,.9)}
   .mv-{{ section.id }} .mv-vitrina .mv-cono{opacity:1}
   .mv-{{ section.id }} .mv-vitrina .mv-lampara{width:30%;height:9px;background:#ffe9c7;box-shadow:0 0 26px 6px rgba(var(--luz),.6)}
-  .mv-{{ section.id }} .mv-foto{position:absolute;inset:8% 8% 8%;width:84%;height:84%;object-fit:contain;z-index:1}
+  .mv-{{ section.id }} .mv-foto{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:1;filter:sepia(.2) brightness(.97);
+    -webkit-mask-image:radial-gradient(ellipse 58% 60% at 50% 48%,#000 55%,transparent 100%);mask-image:radial-gradient(ellipse 58% 60% at 50% 48%,#000 55%,transparent 100%)}
   .mv-{{ section.id }} .mv-info{padding:clamp(24px,4vw,48px);display:flex;flex-direction:column;gap:18px}
   .mv-{{ section.id }} .mv-linea{margin:0;font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:var(--marca);font-weight:700}
   .mv-{{ section.id }} .mv-nombre{margin:-8px 0 0;font-size:clamp(28px,3.2vw,42px);line-height:1.05;letter-spacing:-1px;color:var(--texto)}
@@ -173,7 +176,7 @@
     .mv-{{ section.id }} .mv-caja{grid-template-columns:1fr;border-radius:0;height:100%}
     .mv-{{ section.id }} .mv-vitrina{min-height:55vh}
     .mv-{{ section.id }} .mv-nicho.on .mv-etiqueta{opacity:1;transform:none}
-    .mv-{{ section.id }} .mv-nicho.on .mv-prenda{filter:brightness(.8)}
+    .mv-{{ section.id }} .mv-nicho.on .mv-prenda{filter:sepia(.22) brightness(.85)}
   }
   @media (prefers-reduced-motion:reduce){.mv-{{ section.id }} *{transition:none !important;animation:none !important}}
 </style>
@@ -297,9 +300,15 @@
         cerrar();
         avisar(actual.titulo + ' agregada <a href="' + raizUrl + 'cart">Ver carrito</a>');
         return fetch(raizUrl + 'cart.js').then(function(r){ return r.json(); }).then(function(c){
-          // actualizar el contador del tema (Dawn y derivados) si existe
-          document.querySelectorAll('.cart-count-bubble span[aria-hidden], .cart-count, [data-cart-count]').forEach(function(el){ el.textContent = c.item_count; });
-          document.dispatchEvent(new CustomEvent('cart:refresh', {detail: c}));
+          // avisar al tema (Horizon) para que actualice el contador y el carrito lateral
+          try {
+            var ev = new Event('shopify:cart:lines-update', {bubbles: true});
+            ev.promise = Promise.resolve({
+              cart: {totalQuantity: c.item_count},
+              detail: {itemCount: c.item_count, items: c.items, source: 'mashko-vitrinas', didError: false}
+            });
+            document.dispatchEvent(ev);
+          } catch (e) {}
         });
       })
       .catch(function(err){ avisar(err.message); pintar(); });
